@@ -1,11 +1,11 @@
 # Disaster Management using Social Media
 
-## Twitter as a Social Media
+	## 1. Twitter as a Social Media
 
-## Other Dataset
+	## 2. Other Dataset
 
-### Elevation
+			### a. Elevation
 
-### Rainfall
+			### b. Rainfall
 
-## Case Study : Bihar, India
+	## 3.Case Study : Bihar, India
