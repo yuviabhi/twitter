@@ -1,0 +1,19 @@
+data-pull
+
+then,
+
+svm
+
+then,
+
+extract_place
+
+then,
+
+dbscan
+
+then,
+
+rbm using elevation, waterbodies, rainfall
+
+

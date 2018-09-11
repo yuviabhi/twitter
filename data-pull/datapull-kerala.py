@@ -4,6 +4,35 @@ import csv
 import time
 import datetime as dt  
 import os.path
+import json
+
+#################################################
+#auto run
+#today = dt.date.today()
+#week_ago = today - dt.timedelta(days=7)
+
+#manual run
+today='2018-07-01'
+week_ago = str((dt.datetime.strptime(today, "%Y-%m-%d") - dt.timedelta(days=7))).split(" ")[0]
+#################################################
+
+#################################################
+consumer_key = 'dWSksJ98HCFhBA8SCc9qsiTCv'  
+consumer_secret = 'BrZIrJ8VMWh40sqI7bKgdPpuPWEXdq4OnVKjol9FSOHNx9JHYS'  
+access_token = '399258420-0DQdayCWBMUjAMbUCRSBemHPgFm3A6DbMolUQGmi'  
+access_token_secret = 'k9eCGx6QPnU8yFrghsG5xE8RWsOoMtSejhj1kUsTKcItz'  
+#################################################
+
+# OAuth process, using the keys and tokens  
+#auth = tweepy.OAuthHandler(consumer_key, consumer_secret)  
+#auth.set_access_token(access_token, access_token_secret)  
+auth = tweepy.AppAuthHandler(consumer_key, consumer_secret)
+
+api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+
+if (not api):
+    print ("Can't Authenticate")
+    sys.exit(-1)
 
 def limit_handled(cursor):
     while True:
@@ -12,16 +41,24 @@ def limit_handled(cursor):
         except tweepy.RateLimitError:
             time.sleep(15 * 60)
             
-def parseTweet(csvFile) :
-	try:	
-		#Use csv writer
-		csvWriter = csv.writer(csvFile,delimiter="\t")
-		
+def parseTweet(csvFile, json_file_name) :
+	
+	csvWriter = csv.writer(csvFile,delimiter="\t")
+	file_json = open(json_file_name, 'w')
+
+	
+	count = 0
+	errorCount=0
+	
+	# Flood	 Nagpur  geocode="21.1458,79.0882,2000km" 
+	# NAGPUR (21.1458N, 79.0882E) Since its the central point of India
+	# geocode="22.8,81.0,1720km" is almost(99.9999%) covering the territory of India
+	try:		
 		for tweet in limit_handled(tweepy.Cursor(api.search, 
 		q = "flood", 
 		since = week_ago, 
 		until = today, 
-		geocode="21.1458,79.0882,2000km", 
+		geocode="22.8,81.0,1720km", 
 		lang = "en").items()):
 		
 			if (tweet.place is None):
@@ -43,56 +80,43 @@ def parseTweet(csvFile) :
 			tweet.user.friends_count, 
 			tweet.retweet_count])
 			
-			print tweet.created_at, 
-			tweet.text, 
-			tweet_geo, 
-			tweet_place_bbox, 
-			tweet.user.location, 
-			tweet.user.screen_name, 
-			tweet.user.friends_count, 
-			tweet.retweet_count
-			#print tweet
+			print tweet.created_at, tweet.text 
+			#,tweet_geo 
+			#,tweet_place_bbox 
+			#,tweet.user.location 
+			#,tweet.user.screen_name
+			#,tweet.user.friends_count
+			#,tweet.retweet_count			
 			
+			try :			
+				count += 1
+				json.dump(tweet._json, file_json, sort_keys=True, indent=4)
+			except UnicodeEncodeError:
+				errorCount += 1
+				#print "UnicodeEncodeError,errorCount ="+str(errorCount)
+			     
 	except tweepy.TweepError as e:
  		print(e)
- 		
+ 		print "sleeping for 16 minutes ..."
+        time.sleep(60*16)
+    
+	file_json.close()
+	print "completed, errorCount ="+str(errorCount)+" total tweets="+str(count)
  		
 
 if __name__ == "__main__":
 
-	try:
-		consumer_key = 'dWSksJ98HCFhBA8SCc9qsiTCv'  
-		consumer_secret = 'BrZIrJ8VMWh40sqI7bKgdPpuPWEXdq4OnVKjol9FSOHNx9JHYS'  
-		access_token = '399258420-0DQdayCWBMUjAMbUCRSBemHPgFm3A6DbMolUQGmi'  
-		access_token_secret = 'k9eCGx6QPnU8yFrghsG5xE8RWsOoMtSejhj1kUsTKcItz'  
+	try:		
 
-		# OAuth process, using the keys and tokens  
-		auth = tweepy.OAuthHandler(consumer_key, consumer_secret)  
-		auth.set_access_token(access_token, access_token_secret)  
-
-		api = tweepy.API(auth)
-
-		#auto run
-		#today = dt.date.today()
-		#week_ago = today - dt.timedelta(days=7)
-
-		#manual run
-		today='2018-07-08'
-		week_ago = '2018-07-01'
-
-		# Open/create a file to append data to
 		projpath = os.path.abspath(os.path.join('', os.pardir))
-		filepath = '/dataset/flood/kerala/flood-kerala-2000km-tweets-with-geo-coords-'+str(today).replace('-','')+'.csv'
+		filename = '/dataset/flood/kerala/kerala-tweets-'+str(today).replace('-','')+'.csv'
+		csvFile_name = projpath + filename
+		jsonFile_name = str(csvFile_name).replace('.csv','.json')
+
 		
-		with open (projpath + filepath, 'w') as csvFile:
+		with open (csvFile_name, 'w') as csvFile:
 			csvFile.write("created-at\ttext\tgeo-loc\tplace-bbox\tusr-loc\tusername\tfriends\tretweet\n")
-			parseTweet(csvFile)	
-
-		# Flood		nagpur  geocode="21.1458,79.0882,2000km",    21.1458 N, 79.0882 E 
-		# NAGPUR Since its the central point of india
-
-	
-				   
+			parseTweet(csvFile, jsonFile_name)	
 				   
 	except Exception as e:
 		print(e)
@@ -183,8 +207,8 @@ SAMPLE CURSOR IN JSON
         "id_str": "4017736032",
         "profile_background_tile": false,
         "following": false,
-        "description": "30+ sec video bot / 30+ 秒 ビデオ bot | Love Live! • Love Live! Sunshine!! • μ's & Aqours seiyuu/声優 | This account no longer accepts requests | ENG only!",
-        "name": "30+ sec of ラブライブ!",
+        "description": "----text---",
+        "name": "30+ sec of!",
         "profile_sidebar_border_color": "000000",
         "entities": {
             "description": {
@@ -219,7 +243,7 @@ SAMPLE CURSOR IN JSON
         "friends_count": 6,
         "id": 4017736032,
         "profile_background_color": "000000",
-        "location": "音ノ木坂学院 / 浦の星女学院 ",
+        "location": "place name",
         "time_zone": null,
         "screen_name": "30seclovelive",
         "listed_count": 228,
@@ -278,8 +302,8 @@ SAMPLE CURSOR IN JSON
                         "id_str": "4017736032",
                         "profile_background_tile": false,
                         "following": false,
-                        "description": "30+ sec video bot / 30+ 秒 ビデオ bot | Love Live! • Love Live! Sunshine!! • μ's & Aqours seiyuu/声優 | This account no longer accepts requests | ENG only!",
-                        "name": "30+ sec of ラブライブ!",
+                        "description": "description text",
+                        "name": "30+ sec of",
                         "profile_sidebar_border_color": "000000",
                         "entities": {
                             "description": {
@@ -314,7 +338,7 @@ SAMPLE CURSOR IN JSON
                         "friends_count": 6,
                         "id": 4017736032,
                         "profile_background_color": "000000",
-                        "location": "音ノ木坂学院 / 浦の星女学院 ",
+                        "location": "location name text",
                         "time_zone": null,
                         "screen_name": "30seclovelive",
                         "listed_count": 228,
