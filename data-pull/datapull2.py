@@ -6,10 +6,10 @@ from tweepy.streaming import StreamListener
 # NOT WORKING...
 
 #Enter Twitter API Key information
-consumer_key = 'dWSksJ98HCFhBA8SCc9qsiTCv'
-consumer_secret = 'BrZIrJ8VMWh40sqI7bKgdPpuPWEXdq4OnVKjol9FSOHNx9JHYS'
-access_token = '399258420-0DQdayCWBMUjAMbUCRSBemHPgFm3A6DbMolUQGmi'
-access_secret = 'k9eCGx6QPnU8yFrghsG5xE8RWsOoMtSejhj1kUsTKcItz'
+consumer_key = ''
+consumer_secret = ''
+access_token = ''
+access_secret = ''
 
 file = open("flood-coords.csv", "w")
 file.write("X,Y\n")
